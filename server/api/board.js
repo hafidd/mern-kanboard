@@ -12,15 +12,44 @@ const User = require("../models/User");
 router.get("/:id", auth, async (req, res) => {
   try {
     const { id } = req.params;
-    const data = await Board.findById(id).populate(
-      "lists.items.members",
-      "name email"
-    );
+    const data = await Board.findById(id)
+      .populate("lists.items.members", "name email")
+      .populate("user", "name email")
+      .populate("team", "name email");
     if (!data) throw { statusCode: 404 };
     res.json(data);
   } catch (error) {
     const errData = parseError(error);
     return res.status(errData.statusCode).json(errData);
+  }
+});
+
+router.put("/", auth, async (req, res) => {
+  try {
+    const { action, id, data } = req.body;
+    const board = await Board.findById(id);
+    if (!board) throw { statusCode: 404, msg: "board not found" };
+    let returnData = null;
+    switch (action) {
+      case "add-member":
+        if (data === req.session.user.email) throw { statusCode: 400 };
+        const user = await User.findOne({ email: data }).select("-password");
+        if (!user) throw { statusCode: 400, msg: "User does not exist" };
+        // cek exist
+        if (board.team.indexOf(user._id) !== -1)
+          throw { statusCode: 400, msg: "user already exist" };
+        // save
+        board.team.push(user._id);
+        await board.save();
+        returnData = user;
+        break;
+      default:
+        throw { statusCode: 400, msg: "update failed" };
+    }
+    res.json(returnData);
+  } catch (error) {
+    const errData = parseError(error);
+    res.status(errData.statusCode).json(errData);
   }
 });
 
@@ -173,14 +202,6 @@ async function updateItem(reqData) {
       case "update-desc":
         updateData = { "lists.$[list].items.$[item].desc": data };
         break;
-      case "new-member":
-        const user = await User.findOne({ email: data }).select("-password");
-        if (!user) throw { statusCode: 404, msg: "user not found" };
-        newData = user;
-        updateData = {
-          $push: { "lists.$[list].items.$[item].members": user._id },
-        };
-        break;
       case "new-checklist":
         newData = { _id: ObjectId(), name: data.name, completed: false };
         console.log(newData);
@@ -198,6 +219,14 @@ async function updateItem(reqData) {
       case "update-dd":
         console.log(data);
         updateData = { "lists.$[list].items.$[item].dd": data };
+        break;
+      case "update-members":
+        const user = await User.findById(data._id).select("-password");
+        if (!user) throw { statusCode: 404, msg: "user not found" };
+        updateData = data.checked
+          ? { $push: { "lists.$[list].items.$[item].members": user._id } }
+          : { $pull: { "lists.$[list].items.$[item].members": user._id } };
+        if (data.checked) newData = { user, ...data };
         break;
       default:
         throw { statusCode: 400, msg: "update failed" };

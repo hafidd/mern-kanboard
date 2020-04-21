@@ -1,14 +1,15 @@
-import React, { } from "react";
+import React from "react";
 import "./Modal.css";
 
 export default function ({
   title = "",
   visible = true,
   setVisible = null,
+  c = null,
   children,
 }) {
   return (
-    <div className={`overlay ${visible && "visible"}`}>
+    <div className={`overlay ${visible && "visible"} ${c && c}`}>
       <div className="modal">
         <div className="modal-head">
           <span className="modal-title">{title}</span>

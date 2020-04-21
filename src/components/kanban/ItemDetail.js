@@ -1,13 +1,15 @@
 import React, { useState } from "react";
 import DatePicker from "react-datepicker";
 
+import { compareDates, fontColor } from "../../helpers";
+
 import "./Item.css";
 import "react-datepicker/dist/react-datepicker.css";
 
 import Modal from "../Modal";
 import { useEffect } from "react";
 
-export default function ({ item, updateItem }) {
+export default function ({ item, updateItem, team }) {
   const [dd, setDd] = useState(null);
   const [desc, setDesc] = useState("");
 
@@ -31,19 +33,18 @@ export default function ({ item, updateItem }) {
   const submitNewMember = (data) => updateItem("new-member", data);
   const submitNewCheckList = (data) => updateItem("new-checklist", data);
 
-  var compareDates = function (date1, date2) {
-    if (date1 === date2) return true;
-    if (date1 > date2 || date1 < date2) return false;
-    return true;
-  };
-
   return (
     <div className="item-detail">
-      <Modal title={modalTitle} visible={modal} setVisible={setModal}>
+      <Modal title={modalTitle} visible={modal} setVisible={setModal} c="z999">
         {modalContent === "labels" ? (
           <Labels labels={item.labels} submitNewLabel={submitNewLabel} />
         ) : modalContent === "members" ? (
-          <Members members={item.members} submitNewMember={submitNewMember} />
+          <Members
+            members={item.members}
+            submitNewMember={submitNewMember}
+            team={team}
+            updateItem={updateItem}
+          />
         ) : modalContent === "checklist" ? (
           <Checklist
             checkList={item.checkList}
@@ -59,13 +60,16 @@ export default function ({ item, updateItem }) {
           <p>Labels</p>
           <ul>
             {item.labels.map((label, i) => (
-              <li key={i} className="fl mr1 mb1 p1">
-                <span
-                  className=""
-                  style={{ background: label.color || "white" }}
-                >
-                  {label.name}
-                </span>
+              <li
+                key={i}
+                className="fl mr1 mb1 p1 font10 bold"
+                style={{
+                  borderRadius: "5%",
+                  background: label.color || "white",
+                  color: fontColor(label.color || "#fff"),
+                }}
+              >
+                {label.name}
               </li>
             ))}
             <li className="fl mr1 mb1">
@@ -102,6 +106,7 @@ export default function ({ item, updateItem }) {
         <div>
           <p>Due date</p>
           <DatePicker
+            placeholderText="&#9998;"
             selected={dd}
             onChange={(date) => setDd(date)}
             showTimeSelect
@@ -130,7 +135,19 @@ export default function ({ item, updateItem }) {
       </div>
       {/* checklist */}
       <div className="mb1">
-        <p>Checklist</p>
+        <p>
+          Checklist
+          {item.checkList.length ? (
+            <span>
+              {" ("}
+              {item.checkList.reduce((ac, c) => (c.completed ? ac + 1 : ac), 0)}
+              /{item.checkList.length}
+              {")"}
+            </span>
+          ) : (
+            ""
+          )}
+        </p>
         <ul>
           {item.checkList.map((check, i) => (
             <li key={i}>
@@ -213,34 +230,34 @@ function Labels(props) {
 }
 
 function Members(props) {
-  const { members, submitNewMember } = props;
+  const { members, submitNewMember, team, updateItem } = props;
   const [email, setEmail] = useState("");
+  const memberIds = members.map((m) => m._id);
 
   return (
     <ul>
-      {members.map((member, i) => (
-        <li key={i}>{member.name}</li>
+      {team.map((member, i) => (
+        <li key={i} className="p1">
+          <input
+            type="checkbox"
+            name={member._id}
+            value={member._id}
+            checked={memberIds.indexOf(member._id) !== -1}
+            onChange={(e) => {
+              console.log({
+                _id: e.target.value,
+                checked: e.target.checked,
+              })
+              updateItem("update-members", {
+                _id: e.target.value,
+                checked: e.target.checked,
+              });
+            }}
+          />{" "}
+          {member.name}
+        </li>
       ))}
-      <li>
-        <form
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (email.trim()) submitNewMember(email);
-            setEmail("");
-          }}
-        >
-          <div className="fw">
-            <input
-              className="fw"
-              type="email"
-              placeholder="Email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </div>
-          <button className="fw">Add</button>
-        </form>
-      </li>
+      <li></li>
     </ul>
   );
 }

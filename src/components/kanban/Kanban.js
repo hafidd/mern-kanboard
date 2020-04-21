@@ -3,6 +3,7 @@ import { DragDropContext, Draggable, Droppable } from "react-beautiful-dnd";
 import { useParams, useHistory } from "react-router-dom";
 
 import { cloneDeep } from "lodash";
+import { fontColor } from "../../helpers";
 
 import useUser from "../../context/hooks/useUser";
 
@@ -12,6 +13,7 @@ import Modal from "../Modal";
 import ItemDetail from "./ItemDetail";
 
 export default function () {
+  const [board, setBoard] = useState({});
   const [lists, setLists] = useState([]);
   const [loading, setLoading] = useState(false);
 
@@ -42,7 +44,11 @@ export default function () {
     setLoading(true);
     boardApi
       .loadBoard(id)
-      .then((res) => setLists(res.data.lists))
+      .then((res) => {
+        setLists(res.data.lists);
+        delete res.data.lists;
+        setBoard({ ...res.data, team: [res.data.user, ...res.data.team] });
+      })
       .catch(() => history.push("/"))
       .finally(() => setLoading(false));
   }, [id, history]);
@@ -113,16 +119,25 @@ export default function () {
           list.items = list.items.map((item) => {
             if (item._id === selectedItem._id) {
               if (action === "new-label") item.labels.push(res.data);
-              if (action === "update-desc") item.desc = res.data;
-              if (action === "update-dd") item.dd = res.data;
-              if (action === "new-member") item.members.push(res.data);
-              if (action === "new-checklist") item.checkList.push(res.data);
-              if (action === "update-checklist")
+              else if (action === "update-desc") item.desc = res.data;
+              else if (action === "update-dd") item.dd = res.data;
+              // if (action === "new-member") item.members.push(res.data);
+              else if (action === "new-checklist")
+                item.checkList.push(res.data);
+              else if (action === "update-checklist")
                 item.checkList = item.checkList.map((cl) => {
                   if (cl._id === res.data._id)
                     cl.completed = res.data.completed;
                   return cl;
                 });
+              else if (action === "update-members") {
+                if (res.data.checked) item.members.push(res.data.user);
+                else
+                  item.members = item.members.filter(
+                    (mb) => mb._id !== res.data._id
+                  );
+              }
+
               setSelectedItem(item);
             }
             return item;
@@ -146,6 +161,7 @@ export default function () {
 
   return (
     <div className="board">
+      {/* MODAL */}
       <Modal title={modalTitle} visible={modal} setVisible={setModal}>
         {modalContent === "list" ? (
           <NewList
@@ -164,13 +180,55 @@ export default function () {
             setModal={setModal}
           />
         ) : modalContent === "detail" ? (
-          <ItemDetail item={selectedItem} updateItem={updateItem} />
+          <ItemDetail
+            item={selectedItem}
+            updateItem={updateItem}
+            team={board.team}
+          />
+        ) : modalContent === "member" ? (
+          <Member
+            id={id}
+            board={board}
+            setLoading={setLoading}
+            setBoard={setBoard}
+            setModal={setModal}
+          />
         ) : (
           ""
         )}
       </Modal>
-      <div className="board-menu">
-        <h3>Board Name</h3>
+      <div className="board-menu flex-wrap-1">
+        <h3 className="mr2">{board.name}</h3>
+        <ul className="" style={{ display: "flex", flex: 1 }}>
+          {board.team &&
+            board.team.map((team) => (
+              <li
+                key={team._id}
+                className="mr1 p1"
+                style={{
+                  background: "white",
+                  borderRadius: "10%",
+                }}
+              >
+                <span role="img" aria-label="" className="font12">
+                  {team.gender === "m"
+                    ? "🧟‍♂️"
+                    : team.gender === "f"
+                    ? "🧟‍♀️"
+                    : "👽"}
+                </span>
+                {team.name}
+              </li>
+            ))}
+          <li>
+            <button
+              className="fh"
+              onClick={() => showModal("Add member", "member")}
+            >
+              +
+            </button>
+          </li>
+        </ul>
       </div>
       <DragDropContext onDragEnd={(e) => onDragEnd(e)}>
         <Droppable type="list" direction="horizontal" droppableId={"content"}>
@@ -278,29 +336,63 @@ export default function () {
 function Item({ list }) {
   return (
     <React.Fragment>
-      <p>{list.name}</p>
+      {/* name */}
+      <p className="bold font10">{list.name}</p>
+      {/* labels */}
+      <div className="mt2">
+        <ul className="flex-wrap-1">
+          {list.labels &&
+            list.labels.map((label, i) => (
+              <li
+                key={label._id + i}
+                className="mr1 mb1 p1 font8 bold"
+                style={{
+                  borderRadius: "5%",
+                  background: label.color || "white",
+                  color: fontColor(label.color || "#fff"),
+                }}
+              >
+                {label.name}
+              </li>
+            ))}
+        </ul>
+      </div>
+      {/* checklist */}
+      {list.checkList.length ? (
+        <div className="mt2 font10">
+          Checklist{" "}
+          {list.checkList.reduce((ac, c) => (c.completed ? ac + 1 : ac), 0)}/
+          {list.checkList.length}
+        </div>
+      ) : (
+        ""
+      )}
+      {/* members */}
+      {list.members.length ? (
+        <div className="mt2 font10">
+          <ul className="flex-wrap-1">
+            {list.members.map((mm) => (
+              <li key={mm._id}>
+                <span role="img" aria-label="" className="font12">
+                  {mm.gender === "m" ? "🧟‍♂️" : mm.gender === "f" ? "🧟‍♀️" : "👽"}
+                </span>
+                <span>{mm.name}</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : (
+        ""
+      )}
+      {/* due date */}
       {list.dd && (
-        <button>
+        <div className="font8 mt2">
           <span role="img" aria-label="">
             🕑
           </span>{" "}
-          {new Date(list.dd).getDate()}
-        </button>
+          {new Date(list.dd).toLocaleString("id-ID")}
+        </div>
       )}
-      {list.labels &&
-        list.labels.map((label) => (
-          <button
-            key={label.name + Math.random()}
-            style={{
-              backgroundColor: label.color || "white",
-            }}
-          >
-            {label.name}
-          </button>
-        ))}
-      {list.labels && <br />}
-      {list.members &&
-        list.members.map((mm) => <span key={mm._id}>{mm.name}</span>)}
     </React.Fragment>
   );
 }
@@ -392,5 +484,50 @@ function NewItem({ lists, selectedList, id, setLoading, setLists, setModal }) {
         </div>
       </form>
     </div>
+  );
+}
+
+function Member({ id, board, setBoard, setLoading, setModal }) {
+  const [email, setEmail] = useState("");
+
+  return (
+    <ul>
+      {board.team.map((member, i) => (
+        <li key={i}>{member.name}</li>
+      ))}
+      <li>
+        <form
+          onSubmit={async (e) => {
+            e.preventDefault();
+            if (email.trim()) {
+              setLoading(true);
+              try {
+                const res = await boardApi.updateBoard({
+                  action: "add-member",
+                  id,
+                  data: email,
+                });
+                setBoard({ ...board, team: [...board.team, res.data] });
+              } catch (error) {
+                console.log(error);
+              }
+              setLoading(false);
+            }
+            setEmail("");
+          }}
+        >
+          <div className="fw">
+            <input
+              className="fw"
+              type="email"
+              placeholder="Email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+            />
+          </div>
+          <button className="fw">Add</button>
+        </form>
+      </li>
+    </ul>
   );
 }

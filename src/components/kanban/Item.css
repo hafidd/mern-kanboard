@@ -11,10 +11,15 @@
 li {
   list-style: none;
 }
-
-.flex-wrap-1 {
-  display: flex;
-  flex-wrap: wrap;
+ 
+.react-datepicker-wrapper input {
+  border: none;
+  border-bottom: 1px solid black;
+  max-width: 130px;
+  text-align: center;
+  margin-right: 2px;
 }
- 
- 
+
+.z999 {
+  z-index: 999;
+}

@@ -8,9 +8,12 @@ const Board = require("../models/Board");
 
 router.get("/", auth, async ({ userId }, res) => {
   try {
-    const data = await Board.find({ user: userId }).sort({ _id: -1 });
+    const data = await Board.find({
+      $or: [{ team: userId }, { user: userId }],
+    }).sort({ _id: -1 });
     res.json(data);
   } catch (error) {
+    console.log(error);
     res.status(500).json("err");
   }
 });
