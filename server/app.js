@@ -18,27 +18,39 @@ const {
 } = process.env;
 
 // session
-app.use(
-  session({
-    name: SESS_NAME,
-    resave: true,
-    rolling: true,
-    saveUninitialized: false,
-    secret: SESS_SECRET,
-    store: new MongoStore({ mongooseConnection: mongoose.connection }),
-    cookie: {
-      maxAge: SESS_LIFETIME,
-      sameSite: true,
-      secure: NODE_ENV === "production",
-    },
-  })
-);
+const sessMiddleware = session({
+  name: SESS_NAME,
+  resave: true,
+  rolling: true,
+  saveUninitialized: false,
+  secret: SESS_SECRET,
+  store: new MongoStore({ mongooseConnection: mongoose.connection }),
+  cookie: {
+    maxAge: SESS_LIFETIME,
+    sameSite: true,
+    secure: NODE_ENV === "production",
+  },
+});
+app.use(sessMiddleware);
 
 // listen
 const server = app.listen(
   PORT,
   console.log(`Server running on port ${PORT} 🔥`)
 );
+
+// socketio
+const io = require("./sio").listen(server);
+//io.use(sharedsession(sessMiddleware, { autoSave: true }));
+
+io.use((socket, next) => {
+  sessMiddleware(socket.request, socket.request.res, next);
+});
+
+app.use((req, res, next) => {
+  req.io = io;
+  return next();
+});
 
 // connect db
 mongoose

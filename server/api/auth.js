@@ -46,6 +46,7 @@ router.post("/login", async (req, res) => {
     delete data.__v;
     req.session.user = data;
     // response
+    console.log(`- ${user.id} login`);
     res.json(data);
   } catch (error) {
     const errData = parseError(error);
@@ -58,8 +59,30 @@ router.get("/user-data", auth, (req, res) => res.json(req.session.user));
 
 // logout
 router.post("/logout", (req, res) => {
-  req.session.destroy();
+  if (req.session.user !== undefined) {
+    const idUser = req.session.user._id;
+    req.session.destroy();
+    // delete sio
+    delete req.io.connectedUsers[idUser];
+    console.log(`- ${idUser} logout`);
+  }
   res.json({ msg: "logout success" });
+});
+
+// update boardRoles
+router.put("/update-boardRoles", auth, async (req, res) => {
+  try {
+    const { boardRoles } = await User.findById(req.session.user._id).select(
+      "boardRoles"
+    );
+    req.session.user.boardRoles = boardRoles;
+    req.session.save();
+    console.log("reload boardROles", req.session.user._id);
+    res.json(boardRoles);
+  } catch (error) {
+    const errData = parseError(error);
+    return res.status(errData.statusCode).json(errData);
+  }
 });
 
 module.exports = router;

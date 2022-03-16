@@ -37,9 +37,9 @@ export default function () {
           onChange={(e) => setPassword(e.target.value)}
         />
         <br />
-        <button>sbmt</button>
+        <button className="btn1">Login</button>
         <Link to="/register">
-          <button>Register</button>
+          <button className="btn1 ml1">Register</button>
         </Link>
       </form>
     </>

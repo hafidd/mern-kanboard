@@ -5,6 +5,7 @@ export default function ({
   title = "",
   visible = true,
   setVisible = null,
+  closeModal,
   c = null,
   children,
 }) {
@@ -13,7 +14,13 @@ export default function ({
       <div className="modal">
         <div className="modal-head">
           <span className="modal-title">{title}</span>
-          <button className="modal-close" onClick={() => setVisible(!visible)}>
+          <button
+            className="modal-close"
+            onClick={() => {
+              if (closeModal) closeModal();
+              else setVisible(false);
+            }}
+          >
             <span>&times;</span>
           </button>
         </div>

@@ -5,16 +5,15 @@ import useUser from "../../context/hooks/useUser";
 import ErrMsg from "../ErrMsg";
 
 export default function () {
-  
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [password2, setPassword2] = useState("");
-  
+
   const { user, register, useClearErr } = useUser();
 
   useClearErr();
-  
+
   if (user._id) return <Redirect to="/" />;
 
   const sbmt = (e) => {
@@ -55,9 +54,9 @@ export default function () {
           onChange={(e) => setPassword2(e.target.value)}
         />
         <br />
-        <button>sbmt</button>
+        <button className="btn1">Register</button>
         <Link to="/login">
-          <button>Login</button>
+          <a className="ml2">Login</a>
         </Link>
       </form>
     </>

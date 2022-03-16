@@ -43,6 +43,18 @@ export default () => {
     }
   };
 
+  const reloadBoardRoles = async () => {
+    try {
+      const boardRoles = await userApi.reloadBoardRoles();
+      const updatedUser = { ...user, boardRoles };
+      localStorage.setItem("user", JSON.stringify(updatedUser));
+      console.log("boardRoles updated", boardRoles);
+      dispatch({ type: "ROLE_UPDATED", payload: boardRoles });
+    } catch (error) {
+      logout();
+    }
+  };
+
   const savedUser = localStorage.getItem("user")
     ? JSON.parse(localStorage.getItem("user"))
     : null;
@@ -82,5 +94,6 @@ export default () => {
     useClearErr,
     savedUser,
     useSetUser,
+    reloadBoardRoles,
   };
 };

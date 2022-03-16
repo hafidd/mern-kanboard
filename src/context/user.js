@@ -8,6 +8,7 @@ const initialState = {
   _id: null,
   name: null,
   email: null,
+  boardRoles: [],
   loading: false,
   err: null,
 };
@@ -20,6 +21,13 @@ const reducer = (state = initialState, action) => {
     case "REGISTER_SUCCESS":
     case "LOGIN_SUCCESS":
       return { ...action.payload, loading: false, err: null };
+    case "ROLE_UPDATED":
+      return {
+        ...state,
+        boardRoles: action.payload,
+        loading: false,
+        err: null,
+      };
     case "LOGIN_ERROR":
     case "REGISTER_ERROR":
       return { ...state, loading: false, err: action.payload };

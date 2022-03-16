@@ -4,7 +4,6 @@ body,
 .App {
   height: 100%;
   max-height: 100%;
-  font-family: "Roboto";
 }
 
 * {
@@ -24,17 +23,49 @@ tan
 .board {
   display: flex;
   flex-flow: column;
-  background-color: powderblue;
+  /* background-color: powderblue; */
+  background-color: #0079bf;
 }
 
 .header {
   display: flex;
-  background-color: teal;
+  /* background-color: teal; */
+  background-color: #0066a0;
+  padding: 10px 8px;
 }
 .header-menu-left {
   flex: 1;
 }
 .header-menu-right {
+}
+
+.btn1{
+  background-color: #3d99ce;
+  border: none;
+  border-radius: 2%;
+  padding: 4px 10px;
+  color: white;
+  cursor: pointer;
+}
+.btn2{
+  background-color: #3d99ce;
+  border: none;
+  border-radius: 2%;
+  padding: 2px 5px;
+  color: white;
+  cursor: pointer;
+}
+.btn2r{
+  background-color: #3d99ce;
+  border: none;
+  border-radius: 50%;
+  padding: 2px 5px;
+  color: white;
+  cursor: pointer;
+}
+
+.btn1:hover{
+  background-color: #60a1c7;
 }
 
 .boards {
@@ -45,10 +76,11 @@ tan
 }
 .boards li {
   list-style: none;
-  padding: 3px;
+  padding: 5px 8px;
   border: 1px solid black;
   border-radius: 1%;
-  background-color: white;
+  box-shadow: 0 2px 0 #091e4240;
+  background-color: rgb(240, 232, 232);
   margin: 0 0 1% 0;
   height: 150px;
   width: 95%;
@@ -65,7 +97,7 @@ tan
 }
 
 .board {
-  padding: 2% 2% 0 2%;
+  padding: 1%;
   flex: 1;
   overflow: auto;
 }
@@ -109,6 +141,7 @@ tan
 .list-content ul li {
   background-color: white;
   padding: 4px 2px 4px 3px;
+  box-shadow: 0 1px 0 #091e4240;
   margin-bottom: 3px;
   list-style: none;
   word-wrap: break-word;
@@ -130,6 +163,8 @@ tan
   background-color: rgb(219, 214, 214);
   border-radius: 5%;
 }
+
+input {padding: 4px;}
 
 .flex-wrap-1 {
   display: flex;
@@ -173,8 +208,14 @@ tan
 .mr2 {
   margin-right: 2%;
 }
+.ml1 {
+  margin-left: 1%;
+}
+.ml2 {
+  margin-left: 2%;
+}
 .p1 {
-  padding: 1%;
+  padding: 1px;
 }
 .ph1 {
   padding: 0 1%;
@@ -182,4 +223,14 @@ tan
 .outline {
   border: 1px solid black;
   border-radius: 5%;
+}
+
+.bg-yellow {
+  background-color: yellow;
+}
+.bg-red {
+  background-color: red;
+}
+.bg-green {
+  background-color: green;
 }

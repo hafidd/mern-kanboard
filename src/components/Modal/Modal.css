@@ -5,7 +5,7 @@
   left: 0;
   right: 0;
   background: rgba(0, 0, 0, 0.5);
-  visibility: hidden;   
+  visibility: hidden;
 }
 
 .visible {
@@ -16,11 +16,15 @@
   margin: 10% auto;
   width: fit-content;
   min-width: 300px;
+  max-width: 95vw;
   padding: 3px;
   border: 1px solid #666;
   background: white;
-  border-radius: 6px;
+  border-radius: 2px;
   position: relative;
+  max-height: 70%;
+  overflow: auto;
+  z-index: 88;
 }
 
 .modal-head {

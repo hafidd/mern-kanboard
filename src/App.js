@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import {
   BrowserRouter as Router,
   Switch,
@@ -16,14 +16,26 @@ import Register from "./components/auth/Register";
 import Kanban from "./components/kanban/Kanban";
 import Boards from "./components/Boards";
 
+import Toast from "./components/toast";
+import Test from "./components/Test";
+
+import { io, connect, disconnect } from "./sio";
+
 function App() {
   const { user, useSetUser, savedUser } = useUser();
+  const [toast, setToast] = useState([]);
+
+  useEffect(() => {
+    console.log(user._id);
+    if (io) disconnect();
+    connect();
+  }, [user._id]);
 
   useSetUser();
 
   // protected route
   const Protected = ({ path, children, ...rest }) => {
-    const loggedInUser = user._id ? user : savedUser;    
+    const loggedInUser = user._id ? user : savedUser;
     if (!loggedInUser) return <Redirect to="/login" />;
     return (
       <Route path={path} {...rest}>
@@ -31,11 +43,27 @@ function App() {
       </Route>
     );
   };
+  //
+  const ProtectedV2 = () => {
+    const loggedInUser = user._id ? user : savedUser;
+    if (!loggedInUser) return <Redirect to="/login" />;
+    else return null;
+  };
+
+  const addToast = (text = "asfsa") =>
+    setToast((prev) => {
+      const id = Math.random();
+      setTimeout(() => delToast(id), 5000);
+      return [...(prev.length < 5 ? prev : prev.slice(1)), { id, text }];
+    });
+
+  const delToast = (id) =>
+    setToast((prev) => [...prev.filter((t) => t.id !== id)]);
 
   return (
-    <div className="App">
-      <Header />
-      <Router>
+    <Router>
+      <div className="App">
+        <Header />
         <Switch>
           <Route exact={true} path="/login">
             <Login />
@@ -43,18 +71,21 @@ function App() {
           <Route exact={true} path="/register">
             <Register />
           </Route>
-          <Protected path="/board/:id">
-            <Kanban />
-          </Protected>
-          <Protected exact={true} path="/">
-            <Boards />
-          </Protected>
+          <Route path="/board/:id">
+            <ProtectedV2 />
+            <Kanban addToast={addToast} />
+          </Route>
+          <Route exact={true} path="/">
+            <ProtectedV2 />
+            <Boards addToast={addToast} />
+          </Route>
           <Route path="*">
             <h1>Not Found</h1>
           </Route>
         </Switch>
-      </Router>
-    </div>
+        <Toast data={toast} delToast={delToast} />
+      </div>
+    </Router>
   );
 }
 

@@ -8,14 +8,39 @@ import useUser from "../context/hooks/useUser";
 import Modal from "./Modal";
 import ErrMsg from "./ErrMsg";
 
-export default function () {
+import { io } from "../sio";
+
+export default React.memo(({ addToast }) => {
   const [boards, setBoards] = useState([]);
   const [err, setErr] = useState(null);
   const [modal, setModal] = useState(false);
 
   const history = useHistory();
 
-  const { user } = useUser();
+  const { user, reloadBoardRoles } = useUser();
+
+  useEffect(() => {
+    if (io) {
+      io.on("add-member", async (data) => {
+        addToast(`Ditambahkan menjadi member board "${data.name}"`);
+        setBoards((prevBoards) => [data, ...prevBoards]);
+        reloadBoardRoles();
+      });
+      io.on("new-roles", (data) => {
+        reloadBoardRoles();
+      });
+      io.on("delete-board", (data) => {
+        setBoards((prevBoards) => prevBoards.filter((b) => b._id !== data));
+      });
+      return () => {
+        io.off("add-member");
+        io.off("delete-board");
+        io.off("new-roles");
+      };
+    }
+  }, [io, reloadBoardRoles]);
+
+  console.log("Boards rendered");
 
   useEffect(() => {
     if (!user._id) return;
@@ -27,8 +52,13 @@ export default function () {
 
   return (
     <div>
-      <h3>My Boards</h3>
-      <button onClick={() => setModal(!modal)}>+ New Board</button>
+      <h3 style={{ color: "white", padding: "10px 5px" }}>
+        My Boards{" "}
+        <button className="btn1" onClick={() => setModal(!modal)}>
+          + New Board
+        </button>
+      </h3>
+
       <ErrMsg error={err} />
       <ul className="boards">
         {boards.map((board) => (
@@ -38,7 +68,8 @@ export default function () {
               history.push(`/board/${board._id}`);
             }}
           >
-            <p>{board.name}</p>
+            <h4 style={{}}>{board.name}</h4>
+            <hr />
             <p>{board.desc}</p>
           </li>
         ))}
@@ -48,7 +79,7 @@ export default function () {
       </Modal>
     </div>
   );
-}
+});
 
 function NewBoard({ setModal, setBoards }) {
   const [name, setName] = useState("");

@@ -1,0 +1,68 @@
+#snackbar {
+  position: fixed;
+  right: 0;
+  bottom: 15px;
+  width: 500px;
+}
+
+#snackbar > .snackbar-item {
+  float: right;
+  margin-top: 2px;
+  margin-right: 5%;
+  z-index: 1;
+  background-color: #333;
+  color: #fff;
+  border-radius: 2px;
+  padding: 16px;
+  width: 300px;
+
+  /* -webkit-animation: fadein 0.5s;
+  animation: fadein 0.5s; */
+  -webkit-animation: fadein 0.5s, fadeout 0.5s 4.5s;
+  animation: fadein 0.5s, fadeout 0.5s 4.5s;
+}
+
+/* Animations to fade the snackbar in and out */
+@-webkit-keyframes fadein {
+  from {
+    margin-right: 0%;
+    opacity: 0;
+  }
+  to {
+    margin-right: 5%;
+    opacity: 1;
+  }
+}
+
+@keyframes fadein {
+  from {
+    margin-right: 0%;
+    opacity: 0;
+  }
+  to {
+    margin-right: 5%;
+    opacity: 1;
+  }
+}
+
+@-webkit-keyframes fadeout {
+  from {
+    margin-right: 5%;
+    opacity: 1;
+  }
+  to {
+    margin-right: 0;
+    opacity: 0;
+  }
+}
+
+@keyframes fadeout {
+  from {
+    margin-right: 5%;
+    opacity: 1;
+  }
+  to {
+    margin-right: 0;
+    opacity: 0;
+  }
+}
