@@ -25,9 +25,9 @@ app.set("trust proxy", 1);
 // session
 const sessMiddleware = session({
   name: SESS_NAME,
-  resave: false,
+  resave: true,
   rolling: true,
-  saveUninitialized: true,
+  saveUninitialized: false,
   secret: SESS_SECRET,
   store: new MongoStore({ mongooseConnection: mongoose.connection }),
   cookie: {
