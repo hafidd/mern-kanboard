@@ -5,6 +5,8 @@ const mongoose = require("mongoose");
 var session = require("express-session");
 const MongoStore = require("connect-mongo")(session);
 
+require("dotenv").config();
+
 app.use(express.json());
 
 // config
@@ -26,7 +28,7 @@ const sessMiddleware = session({
   secret: SESS_SECRET,
   store: new MongoStore({ mongooseConnection: mongoose.connection }),
   cookie: {
-    maxAge: SESS_LIFETIME,
+    maxAge: Number(SESS_LIFETIME),
     sameSite: true,
     secure: NODE_ENV === "production",
   },
@@ -75,3 +77,7 @@ app.use(express.static(require("path").join(__dirname, "./../build")));
 app.get("*", function (req, res) {
   res.status(404).redirect("/");
 });
+
+// app.get("/favicon.ico", function (req, res) {
+//   res.send(require("path").join(__dirname, "./../build")));
+// });
