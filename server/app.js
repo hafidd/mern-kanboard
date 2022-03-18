@@ -19,24 +19,24 @@ const {
   MONGO_URI = "mongodb://localhost/mern-kanboard",
 } = process.env;
 
+// heroku
+app.set("trust proxy", 1);
+
 // session
 const sessMiddleware = session({
   name: SESS_NAME,
-  resave: true,
+  resave: false,
   rolling: true,
-  saveUninitialized: false,
+  saveUninitialized: true,
   secret: SESS_SECRET,
   store: new MongoStore({ mongooseConnection: mongoose.connection }),
   cookie: {
     maxAge: Number(SESS_LIFETIME),
-    sameSite: 'none',
+    sameSite: "none",
     secure: NODE_ENV === "production",
   },
 });
 app.use(sessMiddleware);
-
-// heroku
-app.set('trust proxy', 1);
 
 // listen
 const server = app.listen(
