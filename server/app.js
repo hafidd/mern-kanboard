@@ -20,7 +20,7 @@ const {
 } = process.env;
 
 // heroku
-app.set("trust proxy", 1);
+//app.set("trust proxy", 1);
 
 // session
 const sessMiddleware = session({
@@ -32,7 +32,7 @@ const sessMiddleware = session({
   store: new MongoStore({ mongooseConnection: mongoose.connection }),
   cookie: {
     maxAge: Number(SESS_LIFETIME),
-    sameSite: "none",
+    sameSite: true,
     secure: NODE_ENV === "production",
   },
 });
