@@ -514,6 +514,14 @@ async function updateItem(reqData, sess) {
         // log data
         newLog.data = data;
         break;
+      // ubah name
+      case "rename-item":
+        // {old:"oldname", new:"namaitem abcs xanfsa"}
+        updateData = { "lists.$[list].items.$[item].name": data.new };
+        log += `mengubah nama : '${data}' `;
+        // log data
+        newLog.data = data;
+        break;
       // tambah checklist
       case "new-checklist":
         // {name: '123'}

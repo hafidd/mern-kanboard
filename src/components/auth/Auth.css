@@ -1,0 +1,31 @@
+.auth {
+  margin: auto;
+}
+
+.auth > h2 {
+  color: white;
+  margin: 10px 0;
+}
+
+.auth > form > input {
+  height: 30pt;
+  margin-bottom: 10px;
+  font-size: 20pt;
+}
+
+.auth > form > button {
+  height: 30pt;
+  font-size: 18pt;
+}
+.auth > form > a {
+  margin: 10px;
+  font-size: 15pt;
+  color: white;
+  text-decoration: none;
+}
+@media (max-width: 450px) {
+  .auth {
+    overflow: hidden;
+    width: 90%;
+  }
+}

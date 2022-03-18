@@ -8,9 +8,13 @@ export default function () {
 
   return (
     <div className="header">
-      <h3 onClick={() => history.push("/")} style={{ color: "white" }}>
-        Home
-      </h3>
+      <h4
+        onClick={() => history.push("/")}
+        style={{ color: "white", cursor: "pointer" }}
+      >
+        Kanban Board{" "}
+        <p style={{ fontSize: "7pt", margin: 0 }}>MERN +socket.io</p>
+      </h4>
       <div className="header-menu-left" style={{ padding: "0 10px" }}>
         {/* <button className="btn1">New</button> */}
       </div>

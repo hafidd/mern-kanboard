@@ -17,8 +17,10 @@ export default function ({
   getLogText,
   deleteItem,
   team,
+  labels,
   logs = [],
 }) {
+  const [name, setName] = useState("");
   const [dd, setDd] = useState(null);
   const [desc, setDesc] = useState("");
 
@@ -29,6 +31,7 @@ export default function ({
   useEffect(() => {
     setDd(item.dd ? new Date(item.dd) : null);
     setDesc(item.desc || "");
+    setName(item.name);
   }, [item]);
 
   const openModal = (title = "title", content = null, data) => {
@@ -43,6 +46,8 @@ export default function ({
   const submitNewMember = (data) => updateItem("new-member", data);
   const submitNewCheckList = (data) => updateItem("new-checklist", data);
   const deleteCheckList = (data) => updateItem("delete-checklist", data);
+  const rename = (data) =>
+    updateItem("rename-item", { old: item.name, new: data });
 
   return (
     <div className="item-detail">
@@ -50,8 +55,10 @@ export default function ({
         {modalContent === "labels" ? (
           <Labels
             labels={item.labels}
+            pLabels={labels}
             submitNewLabel={submitNewLabel}
             deleteLabel={deleteLabel}
+            fontColor={fontColor}
           />
         ) : modalContent === "members" ? (
           <Members
@@ -77,6 +84,23 @@ export default function ({
           ""
         )}
       </Modal>
+      {/* name */}
+      <div>
+        <p className="bold">Name: </p>
+        <input
+          className="fw"
+          type="text"
+          defaultValue={item.name}
+          onChange={(e) => {
+            setName(e.target.value);
+          }}
+        ></input>
+        {name !== item.name && (
+          <button className="btn2" onClick={() => rename(name)}>
+            Save
+          </button>
+        )}
+      </div>
       <div className="flex-wrap-1 mb1">
         {/* labels  */}
         <div className="mr2">
@@ -231,9 +255,25 @@ export default function ({
 }
 
 function Labels(props) {
-  const { labels, submitNewLabel, deleteLabel } = props;
+  const { labels, submitNewLabel, deleteLabel, pLabels, fontColor } = props;
   const [name, setName] = useState("");
   const [color, setColor] = useState("#FFFFFF");
+
+  const ColorBtn = ({ color }) => (
+    <button
+      type="button"
+      style={{
+        padding: 0,
+        width: 22,
+        height: 22,
+        marginLeft: 5,
+        border: "none",
+        background: color,
+        cursor: "pointer",
+      }}
+      onClick={() => setColor(color)}
+    ></button>
+  );
 
   return (
     <ul>
@@ -242,6 +282,7 @@ function Labels(props) {
           key={i}
           style={{
             background: label.color || "white",
+            color: fontColor(label.color || "#fff"),
             border: "1px solid black",
             padding: 2,
             marginBottom: 1,
@@ -266,20 +307,57 @@ function Labels(props) {
             setName("");
           }}
         >
-          <div className="fw">
-            <input
-              type="text"
-              placeholder="New label"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-            />
-            <input
-              type="color"
-              value={color}
-              onChange={(e) => setColor(e.target.value)}
-            />
+          <div style={{ background: "#f3f2f0", padding: 4 }}>
+            <div className="fw">
+              <input
+                className="fw"
+                type="text"
+                placeholder="New label"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+              />
+              <input
+                type="color"
+                style={{ padding: 0 }}
+                value={color}
+                onChange={(e) => setColor(e.target.value)}
+              />
+              {["#ff0000", "#00ff00", "#0000ff", "#ffff00"].map((color) => (
+                <ColorBtn key={color} color={color} />
+              ))}
+            </div>
+            <div
+              style={{
+                maxWidth: "300px",
+                padding: "5px 0",
+
+                textAlign: "center",
+              }}
+            >
+              {pLabels.map((l, i) => (
+                <button
+                  key={i}
+                  type="button"
+                  style={{
+                    background: l.color,
+                    color: fontColor(l.color || "#fff"),
+                    border: "none",
+                    boxShadow: "0 1px 0 #091e4240",
+                    margin: "1px",
+                    padding: 1,
+                    cursor: "pointer",
+                  }}
+                  onClick={() => {
+                    setName(l.name);
+                    setColor(l.color);
+                  }}
+                >
+                  {l.name}
+                </button>
+              ))}
+            </div>
+            <button className="fw btn1">Add</button>
           </div>
-          <button className="fw btn1">Add</button>
         </form>
       </li>
     </ul>

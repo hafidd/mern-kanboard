@@ -9,6 +9,7 @@ export default function ({
   c = null,
   children,
 }) {
+  console.log()
   return (
     <div className={`overlay ${visible && "visible"} ${c && c}`}>
       <div className="modal">

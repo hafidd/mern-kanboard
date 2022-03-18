@@ -4,6 +4,7 @@ body,
 .App {
   height: 100%;
   max-height: 100%;
+  overflow: auto;
 }
 
 * {
@@ -11,13 +12,6 @@ body,
   margin: 0;
   box-sizing: border-box;
 }
-
-/* 
-tangerine E37222
-teal
-powder
-tan
-*/
 
 .App,
 .board {
@@ -37,9 +31,10 @@ tan
   flex: 1;
 }
 .header-menu-right {
+  margin: auto;
 }
 
-.btn1{
+.btn1 {
   background-color: #3d99ce;
   border: none;
   border-radius: 2%;
@@ -47,7 +42,7 @@ tan
   color: white;
   cursor: pointer;
 }
-.btn2{
+.btn2 {
   background-color: #3d99ce;
   border: none;
   border-radius: 2%;
@@ -55,7 +50,7 @@ tan
   color: white;
   cursor: pointer;
 }
-.btn2r{
+.btn2r {
   background-color: #3d99ce;
   border: none;
   border-radius: 50%;
@@ -64,7 +59,7 @@ tan
   cursor: pointer;
 }
 
-.btn1:hover{
+.btn1:hover {
   background-color: #60a1c7;
 }
 
@@ -146,6 +141,7 @@ tan
   list-style: none;
   word-wrap: break-word;
   max-height: 200px;
+  overflow: auto;
 }
 
 .dragging {
@@ -164,7 +160,9 @@ tan
   border-radius: 5%;
 }
 
-input {padding: 4px;}
+input {
+  padding: 4px;
+}
 
 .flex-wrap-1 {
   display: flex;

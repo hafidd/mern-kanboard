@@ -23,7 +23,8 @@ export default function () {
   };
 
   return (
-    <>
+    <div className="auth">
+      <h2>Register</h2>
       <ErrMsg msg={false} error={user.err} />
       <form onSubmit={(e) => sbmt(e)}>
         <input
@@ -55,10 +56,8 @@ export default function () {
         />
         <br />
         <button className="btn1">Register</button>
-        <Link to="/login">
-          <a className="ml2">Login</a>
-        </Link>
+        <Link to="/login">Login</Link>
       </form>
-    </>
+    </div>
   );
 }

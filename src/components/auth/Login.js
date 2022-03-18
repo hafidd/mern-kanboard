@@ -3,6 +3,7 @@ import { Link, Redirect } from "react-router-dom";
 import useUser from "../../context/hooks/useUser";
 
 import ErrMsg from "../ErrMsg";
+import "./Auth.css";
 
 export default function () {
   const [email, setEmail] = useState("");
@@ -15,7 +16,8 @@ export default function () {
   if (user._id) return <Redirect to="/" />;
 
   return (
-    <>
+    <div className="auth">
+      <h2>Login</h2>
       <ErrMsg error={user.err} />
       <form
         onSubmit={(e) => {
@@ -38,10 +40,10 @@ export default function () {
         />
         <br />
         <button className="btn1">Login</button>
-        <Link to="/register">
-          <button className="btn1 ml1">Register</button>
+        <Link to="/register" href="">
+          Register
         </Link>
       </form>
-    </>
+    </div>
   );
 }

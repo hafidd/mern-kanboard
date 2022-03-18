@@ -22,7 +22,7 @@
   background: white;
   border-radius: 2px;
   position: relative;
-  max-height: 70%;
+  max-height: 80%;
   overflow: auto;
   z-index: 88;
 }
@@ -33,6 +33,7 @@
   font-size: 1.1em;
   font-weight: bold;
   min-height: 32px;
+  word-wrap: break-word;
 }
 
 .modal-body {

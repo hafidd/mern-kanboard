@@ -71,7 +71,6 @@ export default React.memo(({ addToast }) => {
       io.on("reorder", (data) => {
         setLists((prevList) => reorder(prevList, data.data));
         setLogs((prevLogs) => [data.log, ...prevLogs]);
-        console.log(data.log);
         addToast(toastText(data.log));
       });
       io.on("update-item", (data) => {
@@ -91,7 +90,9 @@ export default React.memo(({ addToast }) => {
                     item.desc = data.update;
                   else if (data.log.action === "update-dd")
                     item.dd = data.update;
-                  else if (data.log.action === "new-checklist")
+                  else if (data.log.action === "rename-item") {
+                    item.name = data.update.new;
+                  } else if (data.log.action === "new-checklist")
                     item.checkList.push(data.update);
                   else if (data.log.action === "update-checklist")
                     item.checkList = item.checkList.map((cl) => {
@@ -113,7 +114,9 @@ export default React.memo(({ addToast }) => {
                   }
 
                   setSelectedItem((prevItem) =>
-                    prevItem !== null ? item : null
+                    prevItem !== null && prevItem._id === item._id
+                      ? item
+                      : prevItem
                   );
                 }
                 return item;
@@ -144,6 +147,8 @@ export default React.memo(({ addToast }) => {
           ),
         }));
         setLogs((prevLogs) => [data.newLog, ...prevLogs]);
+        closeModal();
+        setSelectedMember(null);
         addToast(toastText(data.newLog));
       });
       io.on("update-role", async (data) => {
@@ -261,11 +266,8 @@ export default React.memo(({ addToast }) => {
   }, [user._id, loadBoard]);
 
   useEffect(() => {
-    // if (selectedListId && !modal) {
-    //   setSelectedListId(null);
-    //   setSelectedListName("");
-    // }
-  }, [lists, selectedListId, setSelectedListName, modal]);
+    if (modalContent === "detail") setModalTitle(selectedItem.name);
+  }, [selectedItem]);
 
   const reorder = (lists, { source, destination, type }, revert = false) => {
     if (revert) {
@@ -389,7 +391,7 @@ export default React.memo(({ addToast }) => {
 
   const getLogText = ({ dt, item = selectedItem }) =>
     dt.action === "new-label"
-      ? `menambah label '${dt.data}' 
+      ? `menambah label '${dt.data}'
           ${item === null ? `ke item "${dt.item.name}"` : ""}`
       : dt.action === "delete-label"
       ? `menghapus label '${dt.data}' 
@@ -450,6 +452,8 @@ export default React.memo(({ addToast }) => {
       ? `mengubah nama board → "${dt.data}"`
       : dt.action === "edit-board-desc"
       ? `mengubah deskripsi board → "${dt.data}"`
+      : dt.action === "rename-item"
+      ? `mengubah nama item "${dt.data.old || ""}" → "${dt.data.new || ""}"`
       : "-";
 
   const deleteList = async (listId, listName) => {
@@ -487,6 +491,18 @@ export default React.memo(({ addToast }) => {
     setSelectedMember(null);
   };
 
+  const labels = lists
+    .reduce((arr, val) => arr.concat(val.items), [])
+    .reduce((arr, val) => arr.concat(val.labels), [])
+    .reduce((arr, val) => {
+      if (
+        arr.find((a) => a.name === val.name && a.color === val.color) ===
+        undefined
+      )
+        return arr.concat({ name: val.name, color: val.color });
+      return arr;
+    }, []);
+
   return (
     <div className="board">
       {/* MODAL, new list,item,item detail,member */}
@@ -515,6 +531,7 @@ export default React.memo(({ addToast }) => {
             getLogText={getLogText}
             team={board.team}
             logs={logs.filter((l) => l.item && l.item._id === selectedItem._id)}
+            labels={labels}
           />
         ) : modalContent === "member" ? (
           <Member
@@ -531,6 +548,7 @@ export default React.memo(({ addToast }) => {
             myRole={myRole}
             formatDate={formatDate}
             getLogText={getLogText}
+            updateBoard={updateBoard}
             logs={logs.filter((log) => log.user._id === selectedMember._id)}
           />
         ) : modalContent === "log" ? (
@@ -565,26 +583,7 @@ export default React.memo(({ addToast }) => {
                   showModal(team.name, "member-detail");
                 }}
               >
-                {team.name}{" "}
-                {team._id !== board.user._id &&
-                team._id !== user._id &&
-                (myRole === "admin" || myRole === "owner") ? (
-                  <button
-                    className="btn2r"
-                    onClick={() => {
-                      if (
-                        window.confirm(
-                          `hapus (${team.name} - ${team.email}) dari board ${board.name}?`
-                        )
-                      )
-                        updateBoard("delete-member", team);
-                    }}
-                  >
-                    x
-                  </button>
-                ) : (
-                  ""
-                )}
+                {team.name}
               </li>
             ))}
           <li>
@@ -916,7 +915,7 @@ function NewItem({ selectedList, selectedListName, id, setLoading, setModal }) {
   );
 }
 
-function Member({ id, board, setBoard, setLoading, setLogs }) {
+function Member({ id, board, setLoading }) {
   const [email, setEmail] = useState("");
 
   return (
@@ -960,7 +959,15 @@ function Member({ id, board, setBoard, setLoading, setLogs }) {
   );
 }
 
-function MemberSetting({ id, member, myRole, logs, formatDate, getLogText }) {
+function MemberSetting({
+  id,
+  member,
+  myRole,
+  logs,
+  formatDate,
+  getLogText,
+  updateBoard,
+}) {
   const [role, setRole] = useState("");
 
   useEffect(() => {
@@ -975,66 +982,90 @@ function MemberSetting({ id, member, myRole, logs, formatDate, getLogText }) {
     }
   };
 
+  const user = useUser();
+
   return (
     <>
       <h4>{member.email}</h4>
-      <p>Role : {member.role}</p>
-      {member.role !== "owner" && myRole === "owner" ? (
+      <div>
+        <p>Role : {member.role}</p>
+        {member.role !== "owner" && myRole === "owner" ? (
+          <div>
+            <ul>
+              <li>
+                <input
+                  type="radio"
+                  name="role"
+                  checked={role === "admin"}
+                  onChange={() => {
+                    setRole("admin");
+                  }}
+                />{" "}
+                admin
+              </li>
+              <li>
+                <input
+                  type="radio"
+                  name="role"
+                  checked={role === "member"}
+                  onChange={() => {
+                    setRole("member");
+                  }}
+                />{" "}
+                member
+              </li>
+            </ul>
+            {role !== member.role ? (
+              <button className="btn1" onClick={() => updateRole()}>
+                Save
+              </button>
+            ) : (
+              ""
+            )}
+          </div>
+        ) : (
+          ""
+        )}
+      </div>
+      <div>
+        <p>Activity Log</p>
+        {logs.length === 0 ? (
+          "-"
+        ) : (
+          <div
+            style={{
+              border: "1px solid gray",
+              width: "100%",
+              height: 150,
+              overflow: "auto",
+            }}
+          >
+            <Log
+              logs={logs}
+              showUser={false}
+              formatDate={formatDate}
+              getLogText={getLogText}
+            />
+          </div>
+        )}
+      </div>
+      {member.role !== "owner" &&
+      user._id !== member._id &&
+      myRole !== "member" ? (
         <div>
-          <ul>
-            <li>
-              <input
-                type="radio"
-                name="role"
-                checked={role === "admin"}
-                onChange={() => {
-                  setRole("admin");
-                }}
-              />{" "}
-              admin
-            </li>
-            <li>
-              <input
-                type="radio"
-                name="role"
-                checked={role === "member"}
-                onChange={() => {
-                  setRole("member");
-                }}
-              />{" "}
-              member
-            </li>
-          </ul>
-          {role !== member.role ? (
-            <button className="btn1" onClick={() => updateRole()}>
-              Save
-            </button>
-          ) : (
-            ""
-          )}
+          <button
+            className="btn1 bg-red fr mt2"
+            onClick={() => {
+              if (window.confirm(`Keluarkan ${member.name}?`))
+                updateBoard("delete-member", member);
+              else return false;
+            }}
+          >
+            Remove
+          </button>
         </div>
       ) : (
         ""
-      )}
-      <p>Activity Log</p>
-      {logs.length === 0 ? (
-        "-"
-      ) : (
-        <div
-          style={{
-            border: "1px solid gray",
-            width: "100%",
-            height: 150,
-            overflow: "auto",
-          }}
-        >
-          <Log
-            logs={logs}
-            showUser={false}
-            formatDate={formatDate}
-            getLogText={getLogText}
-          />
-        </div>
       )}
     </>
   );

@@ -5,7 +5,11 @@ export default function ({ data, delToast }) {
   return (
     <div id="snackbar">
       {data.map((d, i) => (
-        <div key={d.id} className="snackbar-item">
+        <div
+          key={d.id}
+          className="snackbar-item"
+          style={{ opacity: 1 - (data.length - (i + 1)) / 5 }}
+        >
           {d.text}
           <button className="btn2 fr bg-red" onClick={() => delToast(d.id)}>
             x
@@ -14,4 +18,13 @@ export default function ({ data, delToast }) {
       ))}
     </div>
   );
+}
+{
+  /*
+  (length - i)
+  6 0
+  5 1
+  4 2
+
+*/
 }
