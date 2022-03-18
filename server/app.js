@@ -29,7 +29,7 @@ const sessMiddleware = session({
   store: new MongoStore({ mongooseConnection: mongoose.connection }),
   cookie: {
     maxAge: Number(SESS_LIFETIME),
-    sameSite: true,
+    sameSite: 'none',
     secure: NODE_ENV === "production",
   },
 });
