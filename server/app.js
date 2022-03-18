@@ -35,6 +35,9 @@ const sessMiddleware = session({
 });
 app.use(sessMiddleware);
 
+// heroku
+app.set('trust proxy', 1);
+
 // listen
 const server = app.listen(
   PORT,
