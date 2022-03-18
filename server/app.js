@@ -67,3 +67,11 @@ mongoose
 app.use("/api/boards", require("./api/boards"));
 app.use("/api/board", require("./api/board"));
 app.use("/api/auth", require("./api/auth"));
+
+// static
+app.use(express.static(require("path").join(__dirname, "./../build")));
+
+// not found
+app.get("*", function (req, res) {
+  res.status(404).redirect("/");
+});
