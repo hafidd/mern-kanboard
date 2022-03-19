@@ -40,8 +40,6 @@ export default React.memo(({ addToast }) => {
     }
   }, [io, reloadBoardRoles]);
 
-  console.log("Boards rendered");
-
   useEffect(() => {
     if (!user._id) return;
     boardApi

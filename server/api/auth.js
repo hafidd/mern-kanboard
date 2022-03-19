@@ -59,7 +59,7 @@ router.get("/user-data", auth, (req, res) => res.json(req.session.user));
 
 // logout
 router.post("/logout", (req, res) => {
-  console.log(req.session);
+  //console.log(req.session);
   if (req.session.user !== undefined) {
     const idUser = req.session.user._id;
     req.session.destroy();

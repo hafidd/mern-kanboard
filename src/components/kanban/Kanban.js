@@ -51,6 +51,10 @@ export default React.memo(({ addToast }) => {
       };
 
       io.emit("join", id);
+      io.on("server-reload", (data) => {
+        io.emit("join", id);
+      });
+
       io.on("new-list", (data) => {
         setLists((prevLists) => [...prevLists, data.newList]);
         setLogs((prevLogs) => [data.newLog, ...prevLogs]);
@@ -217,7 +221,7 @@ export default React.memo(({ addToast }) => {
     }
     return () => {
       if (io) {
-        console.log("io x<");
+        //console.log("io x<");
         [
           "new-item",
           "new-list",
@@ -226,6 +230,7 @@ export default React.memo(({ addToast }) => {
           "delete-member",
           "update-role",
           "new-roles",
+          "server-reload",
         ].forEach((t) => io.off(t));
         io.emit("leave", id);
       }

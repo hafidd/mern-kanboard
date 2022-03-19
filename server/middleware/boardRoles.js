@@ -1,10 +1,10 @@
 module.exports = boardRoles = (roles = "*") => {
   return function (req, res, next) {
-    console.log(
-      req.session.user ? req.session.user.name : "-",
-      req.originalUrl,
-      req.body
-    );
+    // console.log(
+    //   req.session.user ? req.session.user.name : "-",
+    //   req.originalUrl,
+    //   req.body
+    // );
     const id =
       req.params && req.params.id
         ? req.params.id
@@ -20,9 +20,8 @@ module.exports = boardRoles = (roles = "*") => {
       } else if (board === id && roles.indexOf(role) !== -1) return true;
       return false;
     });
-    console.log(ok ? "accept" : "reject");
+    // console.log(ok ? "accept" : "reject");
     if (ok) return next();
-
     res.status(401).end();
   };
 };

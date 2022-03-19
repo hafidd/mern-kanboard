@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
 import {
-  BrowserRouter as Router,
+  HashRouter as Router,
   Switch,
   Route,
   Redirect,
+  useParams,
 } from "react-router-dom";
 
 import useUser from "./context/hooks/useUser";
@@ -17,7 +18,6 @@ import Kanban from "./components/kanban/Kanban";
 import Boards from "./components/Boards";
 
 import Toast from "./components/toast";
-import Test from "./components/Test";
 
 import { io, connect, disconnect } from "./sio";
 
@@ -26,7 +26,7 @@ function App() {
   const [toast, setToast] = useState([]);
 
   useEffect(() => {
-    console.log(user._id);
+    if (!user._id) return;
     if (io) disconnect();
     connect();
   }, [user._id]);

@@ -1,4 +1,3 @@
-const { json } = require("express");
 const socketio = require("socket.io");
 
 module.exports.listen = (server) => {
@@ -20,14 +19,7 @@ module.exports.listen = (server) => {
           ...socket.request.session.user,
           sockets: [socket],
         };
-      // // join boards
-      // const boards = await Board.find({
-      //   $or: [{ team: user._id }, { user: user._id }],
-      // }).select("_id");
-      // boards.forEach((board) => socket.join(board._id));
     }
-
-    // console.log(io.connectedUsers);
 
     socket.on("join", (id) => {
       console.log("socket", socket.id, "join", id);
@@ -37,6 +29,8 @@ module.exports.listen = (server) => {
       console.log("socket", socket.id, "leave", id);
       socket.leave(id);
     });
+
+    io.to(socket.id).emit("server-reload", null);
 
     socket.on("disconnect", () => {
       // console.log(socket.id, "off", socket.request.session.user._id);
