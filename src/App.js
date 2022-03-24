@@ -29,6 +29,7 @@ function App() {
     if (!user._id) return;
     if (io) disconnect();
     connect();
+    io.on("test", (t) => console.log(t));
   }, [user._id]);
 
   useSetUser();

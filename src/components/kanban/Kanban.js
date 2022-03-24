@@ -574,7 +574,16 @@ export default React.memo(({ addToast }) => {
         <h3 style={{ color: "white" }} className="mr2">
           {board.name}
         </h3>
-        <ul className="" style={{ display: "flex", flex: 1 }}>
+
+        <ul
+          className=""
+          style={{
+            display: "flex",
+            flexWrap: "wrap",
+            flex: 1,
+            minWidth: 200
+          }}
+        >
           {board.team &&
             board.team.map((team) => (
               <li
@@ -604,18 +613,21 @@ export default React.memo(({ addToast }) => {
             )}
           </li>
         </ul>
-        <button
-          className="btn1 fh"
-          onClick={() => showModal("Settings", "settings")}
-        >
-          ⚙
-        </button>
-        <button
-          className="btn1 fh ml1"
-          onClick={() => showModal("Activity log", "log")}
-        >
-          Activity
-        </button>
+
+        <div style={{ display: "flex" }}>
+          <button
+            className="btn1"
+            onClick={() => showModal("Settings", "settings")}
+          >
+            ⚙
+          </button>
+          <button
+            className="btn1 ml1"
+            onClick={() => showModal("Activity log", "log")}
+          >
+            Activity
+          </button>
+        </div>
       </div>
 
       <DragDropContext onDragEnd={(e) => onDragEnd(e)}>

@@ -77,3 +77,10 @@ app.use(express.static(require("path").join(__dirname, "./../build")));
 app.get("*", function (req, res) {
   res.status(404).redirect("/");
 });
+
+// test
+let t = 0;
+setInterval(() => {
+  t += 1;
+  io.emit("test", t);
+}, 60000);
