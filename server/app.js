@@ -81,7 +81,7 @@ if (XYZ) {
   setInterval(async () => {
     t += 1;
     io.emit("test", t);
-    if (t === 1 || t % 2 === 0) {
+    if (t === 1 || t % 15 === 0) {
       const dateString = new Date().toLocaleString("id-ID", {
         timeZone: "Asia/Jakarta",
       });
