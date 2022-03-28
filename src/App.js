@@ -30,6 +30,7 @@ function App() {
     if (io) disconnect();
     connect();
     io.on("test", (t) => console.log(t));
+    io.on("reload", () => window.location.reload());
   }, [user._id]);
 
   useSetUser();
