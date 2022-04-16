@@ -19,12 +19,3 @@ export default function ({ data, delToast }) {
     </div>
   );
 }
-{
-  /*
-  (length - i)
-  6 0
-  5 1
-  4 2
-
-*/
-}

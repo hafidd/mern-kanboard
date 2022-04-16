@@ -41,17 +41,40 @@ export default React.memo(({ addToast }) => {
 
   const { user, reloadBoardRoles } = useUser();
 
-  // update (socketio)
+  const loadBoard = useCallback(async () => {
+    setLoading(true);
+    let boardLoaded = false;
+    try {
+      // load board detail
+      const { data } = await boardApi.loadBoard(id);
+      boardLoaded = true;
+      setLists(data.lists);
+      delete data.lists;
+      setBoard({
+        ...data,
+        team: [{ ...data.user, role: "owner" }, ...data.team],
+      });
+      // load logs
+      const logs = await boardApi.loadLogs(id);
+      setLogs(logs.data);
+      setLoading(false);
+    } catch (error) {
+      if (!boardLoaded) history.push("/");
+    }
+  }, [id, history]);
+
+  // socketio events
   useEffect(() => {
     if (io) {
       const toastText = (log) => {
+        console.log(getLogText({ dt: log }));
         return log.user._id !== user._id
           ? log.user.name + " " + getLogText({ dt: log })
           : "" + getLogText({ dt: log });
       };
 
       io.emit("join", id);
-      io.on("server-reload", (data) => {
+      io.on("server-reload", () => {
         io.emit("join", id);
       });
 
@@ -235,7 +258,8 @@ export default React.memo(({ addToast }) => {
         io.emit("leave", id);
       }
     };
-  }, [io, history]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [io]);
 
   useEffect(() => {
     if (board.team) {
@@ -244,35 +268,13 @@ export default React.memo(({ addToast }) => {
     }
   }, [board.team]);
 
-  const loadBoard = useCallback(async () => {
-    setLoading(true);
-    let boardLoaded = false;
-    try {
-      // load board detail
-      const { data } = await boardApi.loadBoard(id);
-      boardLoaded = true;
-      setLists(data.lists);
-      delete data.lists;
-      setBoard({
-        ...data,
-        team: [{ ...data.user, role: "owner" }, ...data.team],
-      });
-      // load logs
-      const logs = await boardApi.loadLogs(id);
-      setLogs(logs.data);
-      setLoading(false);
-    } catch (error) {
-      if (!boardLoaded) history.push("/");
-    }
-  }, [id, history]);
-
   useEffect(() => {
     user._id && loadBoard();
   }, [user._id, loadBoard]);
 
   useEffect(() => {
     if (modalContent === "detail") setModalTitle(selectedItem.name);
-  }, [selectedItem]);
+  }, [selectedItem, modalContent]);
 
   const reorder = (lists, { source, destination, type }, revert = false) => {
     if (revert) {
@@ -320,6 +322,73 @@ export default React.memo(({ addToast }) => {
       loadBoard(); // reload kalo gagal
     }
   };
+
+  const getLogText = ({ dt, item = selectedItem }) =>
+    dt.action === "new-label"
+      ? `menambah label '${dt.data}'
+        ${item === null ? `ke item "${dt.item.name}"` : ""}`
+      : dt.action === "delete-label"
+      ? `menghapus label '${dt.data}' 
+        ${item === null ? `di item "${dt.item.name}"` : ""}`
+      : dt.action === "update-desc"
+      ? `mengubah deskripsi : '${dt.data.slice(0, 15)}' 
+        ${dt.data.length > 15 ? "...." : ""}
+        ${item === null ? `pada item "${dt.item.name}"` : ""}`
+      : dt.action === "update-dd"
+      ? `${dt.data === null ? "menghapus" : "mengubah"} tanggal 
+        ${dt.data === null ? "" : `'${formatDate(new Date(dt.data))}'`} ${
+          item === null ? `pada item "${dt.item.name}"` : ""
+        }`
+      : dt.action === "new-checklist"
+      ? `menambah checklist '${dt.data}' 
+        ${item === null ? `ke item "${dt.item.name}"` : ""}`
+      : dt.action === "delete-checklist"
+      ? `menghapus checklist '${dt.data}' 
+        ${item === null ? `pada item "${dt.item.name}"` : ""}`
+      : dt.action === "update-checklist"
+      ? `mengubah checklist ${dt.data.completed ? "✓" : ""} 
+        '${dt.data.name}'
+        ${item === null ? `pada item "${dt.item.name}"` : ""}`
+      : dt.action === "update-members"
+      ? `${dt.data.checked ? "menambah" : "menghapus"} 
+        member '${dt.data.name}' 
+        ${item === null ? `pada item "${dt.item.name}"` : ""}`
+      : dt.action === "new-board"
+      ? `membuat board "${dt.data}"`
+      : dt.action === "new-list"
+      ? `membuat list "${dt.data}"`
+      : dt.action === "new-item"
+      ? `menambahkan item "${dt.data}" ke list "${dt.list.name}"`
+      : dt.action === "reorder-item"
+      ? `mengubah urutan item "${dt.item.name}" 
+        ${dt.data.source.index + 1}
+        → ${dt.data.destination.index + 1} 
+        pada list "${dt.list.name}"`
+      : dt.action === "reorder-list"
+      ? `mengubah urutan list "${dt.list.name}" 
+        ${dt.data.source.index + 1}
+        → ${dt.data.destination.index + 1}`
+      : dt.action === "move-item"
+      ? `memindahkan item "${dt.item.name}"
+        dari "${dt.sourceList.name}" 
+        ke "${dt.destinationList.name}"`
+      : dt.action === "new-boardMember"
+      ? `menambahkan member "${dt.data.name}"`
+      : dt.action === "delete-boardMember"
+      ? `mengeluarkan member "${dt.data.name}"`
+      : dt.action === "update-role"
+      ? `mengubah role "${dt.data.user.name}" ${dt.data.user.role} → ${dt.data.role}`
+      : dt.action === "delete-item"
+      ? `menghapus item "${dt.item.name}" pada list "${dt.list.name}"`
+      : dt.action === "delete-list"
+      ? `menghapus list ${dt.list.name}`
+      : dt.action === "rename-board"
+      ? `mengubah nama board → "${dt.data}"`
+      : dt.action === "edit-board-desc"
+      ? `mengubah deskripsi board → "${dt.data}"`
+      : dt.action === "rename-item"
+      ? `mengubah nama item "${dt.data.old || ""}" → "${dt.data.new || ""}"`
+      : "-";
 
   const updateItem = async (action, data) => {
     try {
@@ -394,73 +463,6 @@ export default React.memo(({ addToast }) => {
           hour12: false,
         })}`;
 
-  const getLogText = ({ dt, item = selectedItem }) =>
-    dt.action === "new-label"
-      ? `menambah label '${dt.data}'
-          ${item === null ? `ke item "${dt.item.name}"` : ""}`
-      : dt.action === "delete-label"
-      ? `menghapus label '${dt.data}' 
-          ${item === null ? `di item "${dt.item.name}"` : ""}`
-      : dt.action === "update-desc"
-      ? `mengubah deskripsi : '${dt.data.slice(0, 15)}' 
-          ${dt.data.length > 15 ? "...." : ""}
-          ${item === null ? `pada item "${dt.item.name}"` : ""}`
-      : dt.action === "update-dd"
-      ? `${dt.data === null ? "menghapus" : "mengubah"} tanggal 
-          ${dt.data === null ? "" : `'${formatDate(new Date(dt.data))}'`} ${
-          item === null ? `pada item "${dt.item.name}"` : ""
-        }`
-      : dt.action === "new-checklist"
-      ? `menambah checklist '${dt.data}' 
-          ${item === null ? `ke item "${dt.item.name}"` : ""}`
-      : dt.action === "delete-checklist"
-      ? `menghapus checklist '${dt.data}' 
-          ${item === null ? `pada item "${dt.item.name}"` : ""}`
-      : dt.action === "update-checklist"
-      ? `mengubah checklist ${dt.data.completed ? "✓" : ""} 
-          '${dt.data.name}'
-          ${item === null ? `pada item "${dt.item.name}"` : ""}`
-      : dt.action === "update-members"
-      ? `${dt.data.checked ? "menambah" : "menghapus"} 
-          member '${dt.data.name}' 
-          ${item === null ? `pada item "${dt.item.name}"` : ""}`
-      : dt.action === "new-board"
-      ? `membuat board "${dt.data}"`
-      : dt.action === "new-list"
-      ? `membuat list "${dt.data}"`
-      : dt.action === "new-item"
-      ? `menambahkan item "${dt.data}" ke list "${dt.list.name}"`
-      : dt.action === "reorder-item"
-      ? `mengubah urutan item "${dt.item.name}" 
-          ${dt.data.source.index + 1}
-          → ${dt.data.destination.index + 1} 
-          pada list "${dt.list.name}"`
-      : dt.action === "reorder-list"
-      ? `mengubah urutan list "${dt.list.name}" 
-          ${dt.data.source.index + 1}
-          → ${dt.data.destination.index + 1}`
-      : dt.action === "move-item"
-      ? `memindahkan item "${dt.item.name}"
-          dari "${dt.sourceList.name}" 
-          ke "${dt.destinationList.name}"`
-      : dt.action === "new-boardMember"
-      ? `menambahkan member "${dt.data.name}"`
-      : dt.action === "delete-boardMember"
-      ? `mengeluarkan member "${dt.data.name}"`
-      : dt.action === "update-role"
-      ? `mengubah role "${dt.data.user.name}" ${dt.data.user.role} → ${dt.data.role}`
-      : dt.action === "delete-item"
-      ? `menghapus item "${dt.item.name}" pada list "${dt.list.name}"`
-      : dt.action === "delete-list"
-      ? `menghapus list ${dt.list.name}`
-      : dt.action === "rename-board"
-      ? `mengubah nama board → "${dt.data}"`
-      : dt.action === "edit-board-desc"
-      ? `mengubah deskripsi board → "${dt.data}"`
-      : dt.action === "rename-item"
-      ? `mengubah nama item "${dt.data.old || ""}" → "${dt.data.new || ""}"`
-      : "-";
-
   const deleteList = async (listId, listName) => {
     try {
       await boardApi.deleteList({
@@ -487,6 +489,7 @@ export default React.memo(({ addToast }) => {
     setModalContent(content);
     setModal(true);
   };
+
   const closeModal = () => {
     setModalTitle("");
     setModalContent(null);
@@ -508,8 +511,277 @@ export default React.memo(({ addToast }) => {
       return arr;
     }, []);
 
+  const NewListButton = () => (
+    <div className="board-list">
+      <button className="btn-a" onClick={() => showModal("New List", "list")}>
+        + New list
+      </button>
+    </div>
+  );
+
+  const KanbanHeader = () => (
+    <div className="board-menu flex-wrap-1">
+      <h3 style={{ color: "white" }} className="mr2">
+        {board.name}
+      </h3>
+
+      <ul
+        className=""
+        style={{
+          display: "flex",
+          flexWrap: "wrap",
+          flex: 1,
+          minWidth: 200,
+        }}
+      >
+        {board.team &&
+          board.team.map((team) => (
+            <li
+              key={team._id}
+              className="mr1 p1"
+              style={{
+                background: "white",
+              }}
+              onClick={() => {
+                setSelectedMember(team);
+                showModal(team.name, "member-detail");
+              }}
+            >
+              {team.name}
+            </li>
+          ))}
+        <li>
+          {myRole === "admin" || myRole === "owner" ? (
+            <button
+              className="fh btn1"
+              onClick={() => showModal("Add member", "member")}
+            >
+              +
+            </button>
+          ) : (
+            ""
+          )}
+        </li>
+      </ul>
+
+      <div style={{ display: "flex" }}>
+        <button
+          className="btn1"
+          onClick={() => showModal("Settings", "settings")}
+        >
+          ⚙
+        </button>
+        <button
+          className="btn1 ml1"
+          onClick={() => showModal("Activity log", "log")}
+        >
+          Activity
+        </button>
+      </div>
+    </div>
+  );
+
+  const List = ({ d, i }) => (
+    <Draggable
+      isDragDisabled={loading}
+      type="list"
+      // key={d._id}
+      draggableId={d._id}
+      index={i}
+    >
+      {(provided, snapshot) => (
+        <div
+          className={`board-list ${snapshot.isDragging ? "dragging" : ""}`}
+          {...provided.draggableProps}
+          ref={provided.innerRef}
+        >
+          <div {...provided.dragHandleProps} className="list-header">
+            <strong>{d.title}</strong>
+            <button
+              className="btn-a bg-red fr"
+              onClick={() => {
+                if (!window.confirm(`hapus list ${d.title}?`)) return false;
+                deleteList(d._id, d.title);
+              }}
+            >
+              <span style={{ color: "white" }}>x</span>
+            </button>
+          </div>
+          {/* item */}
+          <Droppable type="item" droppableId={d._id}>
+            {(provided, snapshot) => (
+              <div
+                className="list-content"
+                {...provided.droppableProps}
+                ref={provided.innerRef}
+              >
+                <ul>
+                  {d.items.map((list, i) => (
+                    <ListItem d={d} list={list} i={i} key={list._id} />
+                  ))}
+                  {newItem.open && selectedListId === d._id && (
+                    <div className="mt2">
+                      <input
+                        type="text"
+                        className="fw"
+                        placeholder="enter card name..."
+                        defaultValue={newItem.name}
+                        onChange={(e) =>
+                          setNewItem({
+                            ...newItem,
+                            name: e.target.value,
+                          })
+                        }
+                      />
+                      <button
+                        className="btn2 bg-green"
+                        onClick={() => submitNewItem(newItem.name)}
+                      >
+                        Save
+                      </button>
+                      <button
+                        className="btn2 ml1"
+                        onClick={() => {
+                          setNewItem({ open: false });
+                          setSelectedListId(null);
+                        }}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  )}
+                  {newItem.open && selectedListId === d._id ? (
+                    ""
+                  ) : (
+                    <button
+                      className="btn-a fw"
+                      onClick={() => {
+                        setSelectedListId(d._id);
+                        setSelectedListName(d.title);
+                        //showModal("New Item", "item");
+                        setNewItem({ open: true });
+                      }}
+                    >
+                      + New card
+                    </button>
+                  )}
+                </ul>
+              </div>
+            )}
+          </Droppable>
+        </div>
+      )}
+    </Draggable>
+  );
+
+  const ListItem = ({ d, list, i }) => (
+    <Draggable
+      isDragDisabled={loading}
+      type="item"
+      key={list._id}
+      draggableId={list._id}
+      index={i}
+    >
+      {(provided, snapshot) => (
+        <li
+          className={`item ${snapshot.isDragging ? "dragging" : ""}`}
+          {...provided.draggableProps}
+          {...provided.dragHandleProps}
+          ref={provided.innerRef}
+          onClick={() => {
+            setSelectedListId(d._id);
+            setSelectedListName(d.title);
+            showModal(list.name, "detail", list);
+          }}
+        >
+          {/* <Item list={list} {...provided.draggableProps} /> */}
+          {/* name */}
+          <p className="bold font10">{list.name}</p>
+          {/* labels */}
+          <div className="mt2">
+            <ul className="flex-wrap-1">
+              {list.labels &&
+                list.labels.map((label, i) => (
+                  <li
+                    key={label._id + i}
+                    className="mr1 mb1 p1 font8 bold"
+                    style={{
+                      borderRadius: "5%",
+                      background: label.color || "white",
+                      color: fontColor(label.color || "#fff"),
+                    }}
+                  >
+                    {label.name}
+                  </li>
+                ))}
+            </ul>
+          </div>
+          {/* checklist */}
+          {list.checkList.length ? (
+            <div className="mt2 font10">
+              Checklist{" "}
+              {list.checkList.reduce((ac, c) => (c.completed ? ac + 1 : ac), 0)}
+              /{list.checkList.length}
+            </div>
+          ) : (
+            ""
+          )}
+          {/* members */}
+          {list.members.length ? (
+            <div className="mt2 font10">
+              <ul className="flex-wrap-1">
+                {list.members.map((mm) => (
+                  <li key={mm._id}>
+                    <span role="img" aria-label="" className="font12">
+                      {mm.gender === "m"
+                        ? "🧟‍♂️"
+                        : mm.gender === "f"
+                        ? "🧟‍♀️"
+                        : "👽"}
+                    </span>
+                    <span>{mm.name}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          ) : (
+            ""
+          )}
+          {/* due date */}
+          {list.dd && (
+            <div className="font8 mt2">
+              <span role="img" aria-label="">
+                🕑
+              </span>{" "}
+              {new Date(list.dd).toLocaleString("id-ID")}
+            </div>
+          )}
+        </li>
+      )}
+    </Draggable>
+  );
+
   return (
     <div className="board">
+      {/* board name, member list */}
+      <KanbanHeader />
+      {/* kanban */}
+      <DragDropContext onDragEnd={(e) => onDragEnd(e)}>
+        <Droppable type="list" direction="horizontal" droppableId={"content"}>
+          {(provided, snapshot) => (
+            <div
+              className="board-content"
+              {...provided.droppableProps}
+              ref={provided.innerRef}
+            >
+              {lists.map((d, i) => (
+                <List key={d._id} d={d} i={i} />
+              ))}
+              <NewListButton />
+            </div>
+          )}
+        </Droppable>
+      </DragDropContext>
       {/* MODAL, new list,item,item detail,member */}
       <Modal
         title={modalTitle}
@@ -568,279 +840,9 @@ export default React.memo(({ addToast }) => {
           "-"
         )}
       </Modal>
-
-      {/* board name, members */}
-      <div className="board-menu flex-wrap-1">
-        <h3 style={{ color: "white" }} className="mr2">
-          {board.name}
-        </h3>
-
-        <ul
-          className=""
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            flex: 1,
-            minWidth: 200
-          }}
-        >
-          {board.team &&
-            board.team.map((team) => (
-              <li
-                key={team._id}
-                className="mr1 p1"
-                style={{
-                  background: "white",
-                }}
-                onClick={() => {
-                  setSelectedMember(team);
-                  showModal(team.name, "member-detail");
-                }}
-              >
-                {team.name}
-              </li>
-            ))}
-          <li>
-            {myRole === "admin" || myRole === "owner" ? (
-              <button
-                className="fh btn1"
-                onClick={() => showModal("Add member", "member")}
-              >
-                +
-              </button>
-            ) : (
-              ""
-            )}
-          </li>
-        </ul>
-
-        <div style={{ display: "flex" }}>
-          <button
-            className="btn1"
-            onClick={() => showModal("Settings", "settings")}
-          >
-            ⚙
-          </button>
-          <button
-            className="btn1 ml1"
-            onClick={() => showModal("Activity log", "log")}
-          >
-            Activity
-          </button>
-        </div>
-      </div>
-
-      <DragDropContext onDragEnd={(e) => onDragEnd(e)}>
-        <Droppable type="list" direction="horizontal" droppableId={"content"}>
-          {(provided, snapshot) => (
-            <div
-              className="board-content"
-              {...provided.droppableProps}
-              ref={provided.innerRef}
-            >
-              {lists.map((d, i) => (
-                <Draggable
-                  isDragDisabled={loading}
-                  type="list"
-                  key={d._id}
-                  draggableId={d._id}
-                  index={i}
-                >
-                  {(provided, snapshot) => (
-                    <div
-                      className={`board-list ${
-                        snapshot.isDragging ? "dragging" : ""
-                      }`}
-                      {...provided.draggableProps}
-                      ref={provided.innerRef}
-                    >
-                      <div
-                        {...provided.dragHandleProps}
-                        className="list-header"
-                      >
-                        <strong>{d.title}</strong>
-                        <button
-                          className="btn-a bg-red fr"
-                          onClick={() => {
-                            if (!window.confirm(`hapus list ${d.title}?`))
-                              return false;
-                            deleteList(d._id, d.title);
-                          }}
-                        >
-                          <span style={{ color: "white" }}>x</span>
-                        </button>
-                      </div>
-                      <Droppable type="item" droppableId={d._id}>
-                        {(provided, snapshot) => (
-                          <div
-                            className="list-content"
-                            {...provided.droppableProps}
-                            ref={provided.innerRef}
-                          >
-                            <ul>
-                              {d.items.map((list, i) => (
-                                <Draggable
-                                  isDragDisabled={loading}
-                                  type="item"
-                                  key={list._id}
-                                  draggableId={list._id}
-                                  index={i}
-                                >
-                                  {(provided, snapshot) => (
-                                    <li
-                                      className={`item ${
-                                        snapshot.isDragging ? "dragging" : ""
-                                      }`}
-                                      {...provided.draggableProps}
-                                      {...provided.dragHandleProps}
-                                      ref={provided.innerRef}
-                                      onClick={() => {
-                                        setSelectedListId(d._id);
-                                        setSelectedListName(d.title);
-                                        showModal(list.name, "detail", list);
-                                      }}
-                                    >
-                                      <Item
-                                        list={list}
-                                        {...provided.draggableProps}
-                                      />
-                                    </li>
-                                  )}
-                                </Draggable>
-                              ))}
-                              {newItem.open && selectedListId === d._id && (
-                                <div className="mt2">
-                                  <input
-                                    type="text"
-                                    className="fw"
-                                    placeholder="enter card name..."
-                                    defaultValue={newItem.name}
-                                    onChange={(e) =>
-                                      setNewItem({
-                                        ...newItem,
-                                        name: e.target.value,
-                                      })
-                                    }
-                                  />
-                                  <button
-                                    className="btn2 bg-green"
-                                    onClick={() => submitNewItem(newItem.name)}
-                                  >
-                                    Save
-                                  </button>
-                                  <button
-                                    className="btn2 ml1"
-                                    onClick={() => {
-                                      setNewItem({ open: false });
-                                      setSelectedListId(null);
-                                    }}
-                                  >
-                                    Cancel
-                                  </button>
-                                </div>
-                              )}
-                              {newItem.open && selectedListId === d._id ? (
-                                ""
-                              ) : (
-                                <button
-                                  className="btn-a fw"
-                                  onClick={() => {
-                                    setSelectedListId(d._id);
-                                    setSelectedListName(d.title);
-                                    //showModal("New Item", "item");
-                                    setNewItem({ open: true });
-                                  }}
-                                >
-                                  + New card
-                                </button>
-                              )}
-                            </ul>
-                          </div>
-                        )}
-                      </Droppable>
-                    </div>
-                  )}
-                </Draggable>
-              ))}
-              <div className="board-list">
-                <button
-                  className="btn-a"
-                  onClick={() => showModal("New List", "list")}
-                >
-                  + New list
-                </button>
-              </div>
-            </div>
-          )}
-        </Droppable>
-      </DragDropContext>
     </div>
   );
 });
-
-function Item({ list }) {
-  return (
-    <React.Fragment>
-      {/* name */}
-      <p className="bold font10">{list.name}</p>
-      {/* labels */}
-      <div className="mt2">
-        <ul className="flex-wrap-1">
-          {list.labels &&
-            list.labels.map((label, i) => (
-              <li
-                key={label._id + i}
-                className="mr1 mb1 p1 font8 bold"
-                style={{
-                  borderRadius: "5%",
-                  background: label.color || "white",
-                  color: fontColor(label.color || "#fff"),
-                }}
-              >
-                {label.name}
-              </li>
-            ))}
-        </ul>
-      </div>
-      {/* checklist */}
-      {list.checkList.length ? (
-        <div className="mt2 font10">
-          Checklist{" "}
-          {list.checkList.reduce((ac, c) => (c.completed ? ac + 1 : ac), 0)}/
-          {list.checkList.length}
-        </div>
-      ) : (
-        ""
-      )}
-      {/* members */}
-      {list.members.length ? (
-        <div className="mt2 font10">
-          <ul className="flex-wrap-1">
-            {list.members.map((mm) => (
-              <li key={mm._id}>
-                <span role="img" aria-label="" className="font12">
-                  {mm.gender === "m" ? "🧟‍♂️" : mm.gender === "f" ? "🧟‍♀️" : "👽"}
-                </span>
-                <span>{mm.name}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      ) : (
-        ""
-      )}
-      {/* due date */}
-      {list.dd && (
-        <div className="font8 mt2">
-          <span role="img" aria-label="">
-            🕑
-          </span>{" "}
-          {new Date(list.dd).toLocaleString("id-ID")}
-        </div>
-      )}
-    </React.Fragment>
-  );
-}
 
 function NewList({ id, setLoading, setModal }) {
   const [title, setTitle] = useState("");
@@ -891,7 +893,7 @@ function NewItem({ selectedList, selectedListName, id, setLoading, setModal }) {
     try {
       if (!name.trim()) return;
       setLoading(true);
-      const { data } = await boardApi.newItem({
+      await boardApi.newItem({
         id,
         selectedList,
         selectedListName,

@@ -20,19 +20,9 @@ export default function ({
   labels,
   logs = [],
 }) {
-  const [name, setName] = useState("");
-  const [dd, setDd] = useState(null);
-  const [desc, setDesc] = useState("");
-
   const [modal, setModal] = useState(false);
   const [modalTitle, setModalTitle] = useState("");
   const [modalContent, setModalContent] = useState(null);
-
-  useEffect(() => {
-    setDd(item.dd ? new Date(item.dd) : null);
-    setDesc(item.desc || "");
-    setName(item.name);
-  }, [item]);
 
   const openModal = (title = "title", content = null, data) => {
     setModalTitle(title);
@@ -42,7 +32,7 @@ export default function ({
 
   const submitNewLabel = (data) => updateItem("new-label", data);
   const deleteLabel = (data) => updateItem("delete-label", data);
-  const submitDesc = (data) => updateItem("update-desc", desc);
+  const submitDesc = (data) => updateItem("update-desc", data);
   const submitNewMember = (data) => updateItem("new-member", data);
   const submitNewCheckList = (data) => updateItem("new-checklist", data);
   const deleteCheckList = (data) => updateItem("delete-checklist", data);
@@ -51,187 +41,27 @@ export default function ({
 
   return (
     <div className="item-detail">
-      <Modal title={modalTitle} visible={modal} setVisible={setModal} c="z999">
-        {modalContent === "labels" ? (
-          <Labels
-            labels={item.labels}
-            pLabels={labels}
-            submitNewLabel={submitNewLabel}
-            deleteLabel={deleteLabel}
-            fontColor={fontColor}
-          />
-        ) : modalContent === "members" ? (
-          <Members
-            members={item.members}
-            submitNewMember={submitNewMember}
-            team={team}
-            updateItem={updateItem}
-          />
-        ) : modalContent === "checklist" ? (
-          <Checklist
-            checkList={item.checkList}
-            submitNewCheckList={submitNewCheckList}
-            deleteCheckList={deleteCheckList}
-          />
-        ) : modalContent === "log" ? (
-          <Log
-            item={item}
-            logs={logs}
-            formatDate={formatDate}
-            getLogText={getLogText}
-          />
-        ) : (
-          ""
-        )}
-      </Modal>
-      {/* name */}
-      <div>
-        <p className="bold">Name: </p>
-        <input
-          className="fw"
-          type="text"
-          defaultValue={item.name}
-          onChange={(e) => {
-            setName(e.target.value);
-          }}
-        ></input>
-        {name !== item.name && (
-          <button className="btn2" onClick={() => rename(name)}>
-            Save
-          </button>
-        )}
-      </div>
+      <Name itemName={item.name} rename={rename} />
       <div className="flex-wrap-1 mb1">
-        {/* labels  */}
         <div className="mr2">
-          <p className="bold">Labels</p>
-          <ul>
-            {item.labels.map((label, i) => (
-              <li
-                key={i}
-                className="fl mr1 mb1 p1 font10 bold"
-                style={{
-                  borderRadius: "2%",
-                  background: label.color || "white",
-                  color: fontColor(label.color || "#fff"),
-                }}
-              >
-                {label.name}
-              </li>
-            ))}
-            <li className="fl mr1 mb1">
-              <button
-                className="btn2"
-                onClick={() => openModal("Labels", "labels", item.labels)}
-              >
-                <span> &#9998; </span>
-              </button>
-            </li>
-          </ul>
+          <Labels labels={item.labels} openModal={openModal} />
         </div>
-        {/* members */}
         <div className="mr2">
-          <p className="bold">Members</p>
-          <ul className="">
-            {item.members &&
-              item.members.map((member, i) => (
-                <li key={i + member._id} className="fl mr1 mb1 p1 outline">
-                  {member.name}
-                </li>
-              ))}
-            <li className="fl mr1 mb1 p1">
-              <button
-                className="btn2"
-                onClick={() => openModal("Members", "members", item.members)}
-              >
-                <span> &#9998; </span>
-              </button>
-            </li>
-          </ul>
+          <Members openModal={openModal} members={item.members} />
         </div>
-        {/* due date */}
         <div>
-          <p className="bold">Due date</p>
-          <DatePicker
-            placeholderText="&#9998;"
-            selected={dd}
-            onChange={(date) => setDd(date)}
-            showTimeSelect
-            timeFormat="HH:mm"
-            timeIntervals={15}
-            timeCaption="time"
-            dateFormat="d MMMM yyyy H:mm"
-          />
-          {!compareDates(dd, item.dd ? new Date(item.dd) : null) && (
-            <button
-              className="btn2"
-              onClick={() => updateItem("update-dd", dd)}
-            >
-              Save
-            </button>
-          )}
+          <DueDate itemDd={item.dd} updateItem={updateItem} />
         </div>
       </div>
-      {/* desc */}
       <div className="mb1">
-        <p className="bold">Description</p>
-        <textarea
-          className="fw"
-          rows="5"
-          value={desc}
-          onChange={(e) => setDesc(e.target.value)}
-        ></textarea>
-        {desc !== item.desc && (
-          <button className="btn2" onClick={() => submitDesc()}>
-            Save
-          </button>
-        )}
+        <Desc submitDesc={submitDesc} itemDesc={item.desc} />
       </div>
-      {/* checklist */}
       <div className="mb1">
-        <p className="bold">
-          Checklist
-          {item.checkList.length ? (
-            <span>
-              {" ("}
-              {item.checkList.reduce((ac, c) => (c.completed ? ac + 1 : ac), 0)}
-              /{item.checkList.length}
-              {")"}
-            </span>
-          ) : (
-            ""
-          )}
-        </p>
-        <ul>
-          {item.checkList.map((check, i) => (
-            <li key={i}>
-              <input
-                type="checkbox"
-                checked={check.completed}
-                value={check._id}
-                onChange={(e) => {
-                  e.preventDefault();
-                  updateItem("update-checklist", {
-                    _id: check._id,
-                    name: check.name,
-                    completed: !check.completed,
-                  });
-                }}
-              />{" "}
-              {check.name}
-            </li>
-          ))}
-          <li>
-            <button
-              className="btn2"
-              onClick={() =>
-                openModal("Checklist", "checklist", item.checkList)
-              }
-            >
-              <span> &#9998; </span>
-            </button>
-          </li>
-        </ul>
+        <CheckList
+          checkList={item.checkList}
+          openModal={openModal}
+          updateItem={updateItem}
+        />
       </div>
       <div className="mb1">
         <button
@@ -250,11 +80,218 @@ export default function ({
           Delete
         </button>
       </div>
+
+      <Modal title={modalTitle} visible={modal} setVisible={setModal} c="z999">
+        {modalContent === "labels" ? (
+          <UpdateLabels
+            labels={item.labels}
+            pLabels={labels}
+            submitNewLabel={submitNewLabel}
+            deleteLabel={deleteLabel}
+            fontColor={fontColor}
+          />
+        ) : modalContent === "members" ? (
+          <UpdateMembers
+            members={item.members}
+            submitNewMember={submitNewMember}
+            team={team}
+            updateItem={updateItem}
+          />
+        ) : modalContent === "checklist" ? (
+          <UpdateChecklist
+            checkList={item.checkList}
+            submitNewCheckList={submitNewCheckList}
+            deleteCheckList={deleteCheckList}
+          />
+        ) : modalContent === "log" ? (
+          <Log
+            item={item}
+            logs={logs}
+            formatDate={formatDate}
+            getLogText={getLogText}
+          />
+        ) : (
+          ""
+        )}
+      </Modal>
     </div>
   );
 }
 
-function Labels(props) {
+function Name({ itemName, rename }) {
+  const [name, setName] = useState("");
+  useEffect(() => setName(itemName), []);
+
+  return (
+    <div>
+      <p className="bold">Name: </p>
+      <input
+        className="fw"
+        type="text"
+        defaultValue={itemName}
+        onChange={(e) => setName(e.target.value)}
+      ></input>
+      {name !== itemName && (
+        <button className="btn2" onClick={() => rename(name)}>
+          Save
+        </button>
+      )}
+    </div>
+  );
+}
+
+function Desc({ itemDesc, submitDesc }) {
+  const [desc, setDesc] = useState("");
+  useEffect(() => setDesc(itemDesc), []);
+
+  return (
+    <>
+      <p className="bold">Description</p>
+      <textarea
+        className="fw"
+        rows="5"
+        defaultValue={itemDesc}
+        onChange={(e) => setDesc(e.target.value)}
+      ></textarea>
+      {desc !== itemDesc && (
+        <button className="btn2" onClick={() => submitDesc(desc)}>
+          Save
+        </button>
+      )}
+    </>
+  );
+}
+
+function Labels({ labels, openModal }) {
+  return (
+    <>
+      <p className="bold">Labels</p>
+      <ul>
+        {labels.map((label, i) => (
+          <li
+            key={i}
+            className="fl mr1 mb1 p1 font10 bold"
+            style={{
+              borderRadius: "2%",
+              background: label.color || "white",
+              color: fontColor(label.color || "#fff"),
+            }}
+          >
+            {label.name}
+          </li>
+        ))}
+        <li className="fl mr1 mb1">
+          <button
+            className="btn2"
+            onClick={() => openModal("Labels", "labels", labels)}
+          >
+            <span> &#9998; </span>
+          </button>
+        </li>
+      </ul>
+    </>
+  );
+}
+
+function Members({ members, openModal }) {
+  return (
+    <>
+      <p className="bold">Members</p>
+      <ul className="">
+        {members &&
+          members.map((member, i) => (
+            <li key={i + member._id} className="fl mr1 mb1 p1 outline">
+              {member.name}
+            </li>
+          ))}
+        <li className="fl mr1 mb1 p1">
+          <button
+            className="btn2"
+            onClick={() => openModal("Members", "members", members)}
+          >
+            <span> &#9998; </span>
+          </button>
+        </li>
+      </ul>
+    </>
+  );
+}
+
+function CheckList({ checkList, updateItem, openModal }) {
+  return (
+    <>
+      <p className="bold">
+        Checklist
+        {checkList.length ? (
+          <span>
+            {" ("}
+            {checkList.reduce((ac, c) => (c.completed ? ac + 1 : ac), 0)}/
+            {checkList.length}
+            {")"}
+          </span>
+        ) : (
+          ""
+        )}
+      </p>
+      <ul>
+        {checkList.map((check, i) => (
+          <li key={i}>
+            <input
+              type="checkbox"
+              checked={check.completed}
+              value={check._id}
+              onChange={(e) => {
+                e.preventDefault();
+                updateItem("update-checklist", {
+                  _id: check._id,
+                  name: check.name,
+                  completed: !check.completed,
+                });
+              }}
+            />{" "}
+            {check.name}
+          </li>
+        ))}
+        <li>
+          <button
+            className="btn2"
+            onClick={() => openModal("Checklist", "checklist", checkList)}
+          >
+            <span> &#9998; </span>
+          </button>
+        </li>
+      </ul>
+    </>
+  );
+}
+
+function DueDate({ itemDd, updateItem }) {
+  const [dd, setDd] = useState(null);
+  useEffect(() => setDd(itemDd ? new Date(itemDd) : null), []);
+
+  return (
+    <>
+      <p className="bold">Due date</p>
+      <DatePicker
+        placeholderText="&#9998;"
+        selected={dd ? dd : itemDd ? new Date(itemDd) : null}
+        onChange={(date) => setDd(date)}
+        showTimeSelect
+        timeFormat="HH:mm"
+        timeIntervals={15}
+        timeCaption="time"
+        dateFormat="d MMMM yyyy H:mm"
+      />
+      {!compareDates(dd, itemDd ? new Date(itemDd) : null) && (
+        <button className="btn2" onClick={() => updateItem("update-dd", dd)}>
+          Save
+        </button>
+      )}
+    </>
+  );
+}
+
+function UpdateLabels(props) {
   const { labels, submitNewLabel, deleteLabel, pLabels, fontColor } = props;
   const [name, setName] = useState("");
   const [color, setColor] = useState("#FFFFFF");
@@ -364,9 +401,8 @@ function Labels(props) {
   );
 }
 
-function Members(props) {
-  const { members, submitNewMember, team, updateItem } = props;
-  const [email, setEmail] = useState("");
+function UpdateMembers(props) {
+  const { members, team, updateItem } = props;
   const memberIds = members.map((m) => m._id);
 
   return (
@@ -398,7 +434,7 @@ function Members(props) {
   );
 }
 
-function Checklist(props) {
+function UpdateChecklist(props) {
   const { checkList, submitNewCheckList, deleteCheckList } = props;
   const [name, setName] = useState("");
 

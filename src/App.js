@@ -4,7 +4,6 @@ import {
   Switch,
   Route,
   Redirect,
-  useParams,
 } from "react-router-dom";
 
 import useUser from "./context/hooks/useUser";
@@ -14,8 +13,8 @@ import "./App.css";
 import Header from "./components/Header";
 import Login from "./components/auth/Login";
 import Register from "./components/auth/Register";
-import Kanban from "./components/kanban/Kanban";
-import Boards from "./components/Boards";
+import Kanban from "./components/kanban";
+import Boards from "./components/boards";
 
 import Toast from "./components/toast";
 
@@ -36,15 +35,15 @@ function App() {
   useSetUser();
 
   // protected route
-  const Protected = ({ path, children, ...rest }) => {
-    const loggedInUser = user._id ? user : savedUser;
-    if (!loggedInUser) return <Redirect to="/login" />;
-    return (
-      <Route path={path} {...rest}>
-        {children}
-      </Route>
-    );
-  };
+  // const Protected = ({ path, children, ...rest }) => {
+  //   const loggedInUser = user._id ? user : savedUser;
+  //   if (!loggedInUser) return <Redirect to="/login" />;
+  //   return (
+  //     <Route path={path} {...rest}>
+  //       {children}
+  //     </Route>
+  //   );
+  // };
   //
   const ProtectedV2 = () => {
     const loggedInUser = user._id ? user : savedUser;
@@ -65,26 +64,26 @@ function App() {
   return (
     <Router>
       <div className="App">
-        <Header />
-        <Switch>
-          <Route exact={true} path="/login">
-            <Login />
-          </Route>
-          <Route exact={true} path="/register">
-            <Register />
-          </Route>
-          <Route path="/board/:id">
-            <ProtectedV2 />
-            <Kanban addToast={addToast} />
-          </Route>
-          <Route exact={true} path="/">
-            <ProtectedV2 />
-            <Boards addToast={addToast} />
-          </Route>
-          <Route path="*">
-            <h1>Not Found</h1>
-          </Route>
-        </Switch>
+        <Header />        
+          <Switch>
+            <Route exact={true} path="/login">
+              <Login />
+            </Route>
+            <Route exact={true} path="/register">
+              <Register />
+            </Route>
+            <Route path="/board/:id">
+              <ProtectedV2 />
+              <Kanban addToast={addToast} />
+            </Route>
+            <Route exact={true} path="/">
+              <ProtectedV2 />
+              <Boards addToast={addToast} />
+            </Route>
+            <Route path="*">
+              <h1>Not Found</h1>
+            </Route>
+          </Switch>         
         <Toast data={toast} delToast={delToast} />
       </div>
     </Router>
